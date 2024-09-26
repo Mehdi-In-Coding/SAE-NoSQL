@@ -1,5 +1,5 @@
 '''Pour chaque ligne dans Orders_table :
-    Cr�er un document 'order' :
+    Cr嶪r un document 'order' :
         - orderNumber
         - orderDate
         - requiredDate
@@ -7,13 +7,13 @@
         - status
         - comments
     
-    Pour chaque ligne dans OrderDetails_table où OrderDetails_table.orderNumber = Orders_table.orderNumber :
-        Cr�er une sous-collection 'OrderDetails' :
+    Pour chaque ligne dans OrderDetails_table o羅 OrderDetails_table.orderNumber = Orders_table.orderNumber :
+        Cr嶪r une sous-collection 'OrderDetails' :
             - quantityOrdered
             - priceEach
             - orderLineNumber
 
-        Pour chaque ligne dans Products_table où Products_table.productCode = OrderDetails_table.productCode :
+        Pour chaque ligne dans Products_table o羅 Products_table.productCode = OrderDetails_table.productCode :
             Imbriquer les informations du produit :
                 - productCode
                 - productName
@@ -28,8 +28,8 @@
 
     Fin pour (OrderDetails)
 
-    Pour chaque ligne dans Customers_table où Customers_table.customerNumber = Orders_table.customerNumber :
-        Créer une sous-collection 'Customers' :
+    Pour chaque ligne dans Customers_table o羅 Customers_table.customerNumber = Orders_table.customerNumber :
+        Cr矇er une sous-collection 'Customers' :
             - customerName
             - contactLastName
             - contactFirstName
@@ -43,8 +43,8 @@
             - salesRepEmployeeNumber
             - creditLimit
 
-        Pour chaque ligne dans Payments_table où Payments_table.customerNumber = Customers_table.customerNumber :
-            Créer une sous-collection 'payments' :
+        Pour chaque ligne dans Payments_table o羅 Payments_table.customerNumber = Customers_table.customerNumber :
+            Cr矇er une sous-collection 'payments' :
                 - checkNumber
                 - paymentDate
                 - amount
@@ -52,12 +52,12 @@
 
     Fin pour (Customers)
 
-    Ajouter le document 'order' à la collection NoSQL 'Orders'
+    Ajouter le document 'order' � la collection NoSQL 'Orders'
 Fin pour (Orders_table)
 
 
 Pour chaque ligne dans Employees_table :
-    Créer un document 'employee' :
+    Cr矇er un document 'employee' :
         - employeeNumber
         - lastName
         - firstName
@@ -66,7 +66,7 @@ Pour chaque ligne dans Employees_table :
         - reportsTo
         - jobTitle
 
-    Pour chaque ligne dans Offices_table où Offices_table.officeCode = Employees_table.officeCode :
+    Pour chaque ligne dans Offices_table o羅 Offices_table.officeCode = Employees_table.officeCode :
         Imbriquer les informations du bureau :
             - officeCode
             - city
@@ -79,7 +79,7 @@ Pour chaque ligne dans Employees_table :
             - territory
         Fin pour (Offices)
 
-    Ajouter le document 'employee' à la collection NoSQL 'Employees'
+    Ajouter le document 'employee' � la collection NoSQL 'Employees'
 Fin pour (Employees_table)
 
 '''
