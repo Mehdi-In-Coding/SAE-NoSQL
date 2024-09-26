@@ -1,25 +1,24 @@
-# Importation des modules nécessaires
-import sqlite3  # Pour interagir avec une base de données SQLite
-import pandas as pd  # Pour la manipulation et l'analyse de données
+import sqlite3 as sq
+import pandas as pd
 
-# Connexion à la base de données SQLite
-conn = sqlite3.connect("ClassicModel.sqlite") # WARNING aux importations au format ".data" supprimer et remettre à jour
+# Création de la connexion à la base de données SQLite
+conn = sq.connect("ClassicModel.sqlite")
 
-# Dictionnaire contenant 10 requêtes SQL différentes
-requetes_sql = {
-    "Clients sans commandes": """
+# Définition des requêtes SQL
+queries = {
+    "Clients n'ayant jamais effectué une commande": """
         SELECT c.customerNumber, c.customerName, c.contactLastName, c.contactFirstName, c.country
         FROM Customers c
         LEFT JOIN Orders o ON c.customerNumber = o.customerNumber
         WHERE o.customerNumber IS NULL
         ORDER BY c.customerNumber;
     """,
-
-    "Performances des employés": """
+    
+    "Nombre de clients, commandes, et montant total par employé": """
         SELECT e.employeeNumber, e.lastName, e.firstName,
-               COUNT(DISTINCT c.customerNumber) AS nb_clients,
-               COUNT(DISTINCT o.orderNumber) AS nb_commandes,
-               SUM(od.quantityOrdered * od.priceEach) AS total_ventes
+               COUNT(DISTINCT c.customerNumber) AS number_of_clients,
+               COUNT(DISTINCT o.orderNumber) AS number_of_orders,
+               SUM(od.quantityOrdered * od.priceEach) AS total_amount
         FROM Employees e
         LEFT JOIN Customers c ON e.employeeNumber = c.salesRepEmployeeNumber
         LEFT JOIN Orders o ON c.customerNumber = o.customerNumber
@@ -27,13 +26,13 @@ requetes_sql = {
         GROUP BY e.employeeNumber
         ORDER BY e.employeeNumber;
     """,
-
-    "Analyse par bureau": """
+    
+    "Nombre de clients, commandes, montant total, et clients d'un pays différent par bureau": """
         SELECT b.officeCode, 
-               COUNT(DISTINCT c.customerNumber) AS nb_clients,
-               COUNT(DISTINCT o.orderNumber) AS nb_commandes,
-               SUM(od.quantityOrdered * od.priceEach) AS montant_total,
-               COUNT(DISTINCT CASE WHEN c.country != b.country THEN c.customerNumber END) AS clients_internationaux
+               COUNT(DISTINCT c.customerNumber) AS number_of_clients,
+               COUNT(DISTINCT o.orderNumber) AS number_of_orders,
+               SUM(od.quantityOrdered * od.priceEach) AS total_amount,
+               COUNT(DISTINCT CASE WHEN c.country != b.country THEN c.customerNumber END) AS clients_different_country
         FROM Offices b
         LEFT JOIN Employees e ON b.officeCode = e.officeCode
         LEFT JOIN Customers c ON e.employeeNumber = c.salesRepEmployeeNumber
@@ -42,24 +41,24 @@ requetes_sql = {
         GROUP BY b.officeCode
         ORDER BY b.officeCode;
     """,
-
-    "Commandes par produit": """
+    
+    "Nombre de commandes, quantité totale commandée, et nombre de clients différents par produit": """
         SELECT p.productCode, p.productName,
-               COUNT(DISTINCT o.orderNumber) AS nb_commandes,
-               SUM(od.quantityOrdered) AS quantité_totale,
-               COUNT(DISTINCT o.customerNumber) AS nb_clients
+               COUNT(DISTINCT o.orderNumber) AS number_of_orders,
+               SUM(od.quantityOrdered) AS total_quantity,
+               COUNT(DISTINCT o.customerNumber) AS number_of_customers
         FROM Products p
         LEFT JOIN OrderDetails od ON p.productCode = od.productCode
         LEFT JOIN Orders o ON od.orderNumber = o.orderNumber
         GROUP BY p.productCode
         ORDER BY p.productCode;
     """,
-
-    "Ventes par pays": """
+    
+    "Nombre de commandes, montant total des commandes, et montant total payé par pays du client": """
         SELECT c.country,
-               COUNT(DISTINCT o.orderNumber) AS nb_commandes,
-               SUM(od.quantityOrdered * od.priceEach) AS montant_total_ventes,
-               SUM(p.amount) AS total_paiements
+               COUNT(DISTINCT o.orderNumber) AS number_of_orders,
+               SUM(od.quantityOrdered * od.priceEach) AS total_order_amount,
+               SUM(p.amount) AS total_paid
         FROM Customers c
         LEFT JOIN Orders o ON c.customerNumber = o.customerNumber
         LEFT JOIN OrderDetails od ON o.orderNumber = od.orderNumber
@@ -67,10 +66,10 @@ requetes_sql = {
         GROUP BY c.country
         ORDER BY c.country;
     """,
-
-    "Tables de Contingence des commandes en fonction pays du client": """
+    
+    "Table de contingence du nombre de commandes entre ligne de produits et pays du client": """
         SELECT p.productLine, c.country,
-               COUNT(DISTINCT o.orderNumber) AS nb_commandes
+               COUNT(DISTINCT o.orderNumber) AS number_of_orders
         FROM Customers c
         JOIN Orders o ON c.customerNumber = o.customerNumber
         JOIN OrderDetails od ON o.orderNumber = od.orderNumber
@@ -78,10 +77,10 @@ requetes_sql = {
         GROUP BY p.productLine, c.country
         ORDER BY p.productLine, c.country;
     """,
-
-    "Tables de Contingence des commandes sur les produits achetés \n et le pays du client": """
+    
+    "Table de contingence du montant total payé entre ligne de produits et pays du client": """
         SELECT p.productLine, c.country,
-               SUM(od.quantityOrdered * od.priceEach) AS montant_total
+               SUM(od.quantityOrdered * od.priceEach) AS total_paid
         FROM Customers c
         JOIN Orders o ON c.customerNumber = o.customerNumber
         JOIN OrderDetails od ON o.orderNumber = od.orderNumber
@@ -89,18 +88,18 @@ requetes_sql = {
         GROUP BY p.productLine, c.country
         ORDER BY p.productLine, c.country;
     """,
-
-    "Top 10 produits à forte marge": """
+    
+    "Les 10 produits avec la marge moyenne la plus importante": """
         SELECT p.productCode, p.productName, 
-               AVG(od.priceEach - p.buyPrice) AS marge_moyenne
+               AVG(od.priceEach - p.buyPrice) AS avg_margin
         FROM Products p
         JOIN OrderDetails od ON p.productCode = od.productCode
         GROUP BY p.productCode
-        ORDER BY marge_moyenne DESC
+        ORDER BY avg_margin DESC
         LIMIT 10;
     """,
-
-    "Produits vendus à perte": """
+    
+    "Produits vendus à perte avec nom et code du client": """
         SELECT p.productCode, p.productName, o.customerNumber
         FROM Products p
         JOIN OrderDetails od ON p.productCode = od.productCode
@@ -108,37 +107,37 @@ requetes_sql = {
         WHERE od.priceEach < p.buyPrice
         ORDER BY p.productCode, o.customerNumber;
     """,
-
-    "Les Clients sont effectivement en retard de paiement": """
-        WITH AchatsTotaux AS (
+    
+    "Clients dont le montant total payé est inférieur au montant total des achats": """
+        WITH TotalPurchases AS (
             SELECT o.customerNumber,
-                   SUM(od.quantityOrdered * od.priceEach) AS total_achats
+                   SUM(od.quantityOrdered * od.priceEach) AS total_purchase_amount
             FROM Orders o
             JOIN OrderDetails od ON o.orderNumber = od.orderNumber
             GROUP BY o.customerNumber
         ),
-        PaiementsTotaux AS (
+        TotalPayments AS (
             SELECT p.customerNumber,
-                   SUM(p.amount) AS total_paiements
+                   SUM(p.amount) AS total_paid
             FROM Payments p
             GROUP BY p.customerNumber
         )
-        SELECT a.customerNumber,
-               a.total_achats,
-               COALESCE(p.total_paiements, 0) AS total_paiements
-        FROM AchatsTotaux a
-        LEFT JOIN PaiementsTotaux p ON a.customerNumber = p.customerNumber
-        WHERE COALESCE(p.total_paiements, 0) < a.total_achats
-        ORDER BY a.customerNumber;
+        SELECT tp.customerNumber,
+               tp.total_purchase_amount,
+               COALESCE(tpa.total_paid, 0) AS total_paid
+        FROM TotalPurchases tp
+        LEFT JOIN TotalPayments tpa ON tp.customerNumber = tpa.customerNumber
+        WHERE COALESCE(tpa.total_paid, 0) < tp.total_purchase_amount
+        ORDER BY tp.customerNumber;
     """
 }
 
-# Exécution des requêtes et affichage des résultats
-for titre, requête in requetes_sql.items():
-    print(f"--- {titre} ---")
-    df = pd.read_sql_query(requête, conn)
+# Exécution de chaque requête et affichage des résultats
+for title, query in queries.items():
+    print(f"--- {title} ---")
+    df = pd.read_sql_query(query, conn)
     print(df)
     print("\n")
 
-# Fermeture de la connexion
+# Fermeture de la connexion à la base de données
 conn.close()
