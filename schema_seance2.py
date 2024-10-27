@@ -1,3 +1,4 @@
+#Modèle 1 que l'on gardera après reflexion
 '''
 Orders= {- OrderDetails = {- orderNumber  
                            -quantityOrdered  
@@ -59,6 +60,7 @@ Employees = {- employeeNumber
              }
 '''
 '''------------------------------------------------------'''
+#Modèle 2
 '''
 Orders = {- OrderDetails = {- orderNumber  
                             - quantityOrdered  
